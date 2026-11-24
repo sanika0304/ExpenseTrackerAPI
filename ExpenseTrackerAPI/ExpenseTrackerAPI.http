@@ -1,0 +1,6 @@
+@ExpenseTrackerAPI_HostAddress = http://localhost:5042
+
+GET {{ExpenseTrackerAPI_HostAddress}}/api/expenses
+Accept: application/json
+
+###
