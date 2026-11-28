@@ -9,6 +9,211 @@
 })();
 // Get JWT token
 const API_URL = "/api/expenses";
+const INCOME_API_URL = "/api/incomes";
+// GET ALL INCOMES
+async function loadIncomes() {
+    try {
+        const response = await fetch(INCOME_API_URL, {
+            method: "GET",
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error("Unable to load incomes.");
+        }
+
+        incomeRecords = await response.json();
+
+        console.log("Incomes loaded:", incomeRecords);
+
+        return incomeRecords;
+
+    } catch (error) {
+        console.error("Income loading error:", error);
+        incomeRecords = [];
+        return [];
+    }
+}
+
+
+// ADD NEW INCOME
+async function addIncome(income) {
+    try {
+        const response = await fetch(INCOME_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(income)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Unable to add income.");
+        }
+
+        alert("Income added successfully!");
+
+        return true;
+
+    } catch (error) {
+        console.error("Add income error:", error);
+        alert(error.message);
+        return false;
+    }
+}
+// UPDATE INCOME
+async function updateIncome(id, income) {
+
+    try {
+
+        const response = await fetch(`${INCOME_API_URL}/${id}`, {
+            method: "PUT",
+            headers: getAuthHeaders(),
+            body: JSON.stringify(income)
+        });
+
+        if (!response.ok) {
+            throw new Error("Unable to update income.");
+        }
+
+        alert("Income updated successfully!");
+
+        return true;
+
+    } catch (error) {
+
+        console.error("Income update error:", error);
+        alert(error.message);
+
+        return false;
+    }
+}
+
+
+// DISPLAY INCOME RECORDS
+// DISPLAY INCOME RECORDS
+// DISPLAY INCOME RECORDS
+function displayIncomes(incomes) {
+
+    const tableBody = document.getElementById("incomeTableBody");
+    const noIncomes = document.getElementById("noIncomes");
+
+    tableBody.innerHTML = "";
+
+    if (!incomes || incomes.length === 0) {
+        noIncomes.style.display = "block";
+        return;
+    }
+
+    noIncomes.style.display = "none";
+
+    incomes.forEach(income => {
+
+        const row = document.createElement("tr");
+
+        const date = getExpenseDate(income.incomeDate);
+
+        row.innerHTML = `
+            <td>${income.title || "-"}</td>
+            <td>${income.source || "-"}</td>
+            <td>${date ? date.toLocaleDateString("en-IN") : "-"}</td>
+            <td>${formatCurrency(income.amount)}</td>
+            <td>${income.description || "-"}</td>
+            <td>
+                <button class="action-btn edit-btn"
+                    onclick="editIncome(${income.incomeId})">
+                    Edit
+                </button>
+
+                <button class="action-btn delete-btn"
+                    onclick="deleteIncome(${income.incomeId})">
+                    Delete
+                </button>
+            </td>
+        `;
+
+        tableBody.appendChild(row);
+    });
+}
+// EDIT INCOME
+function editIncome(id) {
+
+    const income = incomeRecords.find(
+        item => item.incomeId === id
+    );
+
+    if (!income) {
+        alert("Income record not found.");
+        return;
+    }
+
+    document.getElementById("incomeTitle").value = income.title;
+    document.getElementById("incomeAmount").value = income.amount;
+    document.getElementById("incomeSource").value = income.source;
+    const date = getExpenseDate(income.incomeDate);
+
+    document.getElementById("incomeDate").value = date
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+        : "";
+    document.getElementById("incomeDescription").value =
+        income.description || "";
+
+    editingIncomeId = id;
+
+    document.getElementById("incomeSubmitBtn").textContent =
+        "Update Income";
+
+    // Navigate to Income section
+    window.location.hash = "income";
+}
+
+
+// INCOME FORM SUBMISSION
+// INCOME FORM SUBMISSION
+document.getElementById("incomeForm").addEventListener("submit", async function (event) {
+
+    event.preventDefault();
+
+    const income = {
+        title: document.getElementById("incomeTitle").value,
+        amount: parseFloat(document.getElementById("incomeAmount").value),
+        source: document.getElementById("incomeSource").value,
+        incomeDate: document.getElementById("incomeDate").value,
+        description: document.getElementById("incomeDescription").value
+    };
+
+    let success = false;
+
+    if (editingIncomeId !== null) {
+
+        // UPDATE EXISTING INCOME
+        success = await updateIncome(editingIncomeId, income);
+
+    } else {
+
+        // ADD NEW INCOME
+        success = await addIncome(income);
+    }
+
+    if (success) {
+
+        document.getElementById("incomeForm").reset();
+
+        editingIncomeId = null;
+
+        document.getElementById("incomeSubmitBtn").textContent =
+            "Save Income";
+
+        const incomes = await loadIncomes();
+
+        displayIncomes(incomes);
+        updateIncomeSummary();
+    }
+});
+
 function getToken() {
     return sessionStorage.getItem("token");
 }
@@ -28,7 +233,9 @@ function getAuthHeaders() {
 }
 
 let expenses = [];
+let incomeRecords = [];
 let editingId = null;
+let editingIncomeId = null;
 let monthlyChart = null;
 let categoryChart = null;
 
@@ -36,7 +243,10 @@ let categoryChart = null;
 let monthlyBudget = Number(localStorage.getItem("monthlyBudget")) || 0;
 
 // Initialize dashboard
+
+// Initialize dashboard
 document.addEventListener("DOMContentLoaded", () => {
+
     document.getElementById("todayDate").textContent =
         new Date().toLocaleDateString("en-IN", {
             day: "numeric",
@@ -47,9 +257,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("expenseDate").value =
         getTodayDate();
 
+    document.getElementById("incomeDate").value =
+        getTodayDate();
+
     loadExpenses();
+
+    // Load income records
+    loadIncomes().then(incomes => {
+        displayIncomes(incomes);
+        updateIncomeSummary();
+    });
+
     updateBudgetDisplay();
 });
+
 
 // Format today's date as yyyy-mm-dd
 function getTodayDate() {
@@ -102,6 +323,7 @@ async function loadExpenses() {
 
         displayExpenses();
         updateSummary();
+        updateIncomeSummary();  
         updateCharts();
         updateBudgetDisplay();
 
@@ -213,30 +435,33 @@ function displayExpenses() {
         tbody.appendChild(row);
     });
 }
-
-// Update summary cards
+// Update Expense Summary Cards
 function updateSummary() {
 
     const total = expenses.reduce(
-        (sum, item) => sum + Number(item.amount || 0), 0
+        (sum, expense) => sum + Number(expense.amount || 0),
+        0
     );
 
     const currentDate = new Date();
 
-    const currentMonthExpenses = expenses.filter(item => {
-        const date = getExpenseDate(item.expenseDate);
+    const monthlyTotal = expenses
+        .filter(expense => {
+            const date = getExpenseDate(expense.expenseDate);
 
-        return date &&
-            date.getMonth() === currentDate.getMonth() &&
-            date.getFullYear() === currentDate.getFullYear();
-    });
+            return date &&
+                date.getMonth() === currentDate.getMonth() &&
+                date.getFullYear() === currentDate.getFullYear();
+        })
+        .reduce(
+            (sum, expense) => sum + Number(expense.amount || 0),
+            0
+        );
 
-    const monthlyTotal = currentMonthExpenses.reduce(
-        (sum, item) => sum + Number(item.amount || 0), 0
-    );
+    const transactionCount = expenses.length;
 
-    const average = expenses.length > 0
-        ? total / expenses.length
+    const average = transactionCount > 0
+        ? total / transactionCount
         : 0;
 
     document.getElementById("totalExpenses").textContent =
@@ -246,10 +471,102 @@ function updateSummary() {
         formatCurrency(monthlyTotal);
 
     document.getElementById("totalTransactions").textContent =
-        expenses.length;
+        transactionCount;
 
     document.getElementById("averageExpense").textContent =
         formatCurrency(average);
+}
+
+// Update Income and Available Balance
+function updateIncomeSummary() {
+
+    const totalIncome = incomeRecords.reduce(
+        (sum, income) => sum + Number(income.amount || 0),
+        0
+    );
+
+    const totalExpenses = expenses.reduce(
+        (sum, expense) => sum + Number(expense.amount || 0),
+        0
+    );
+
+    const availableBalance = totalIncome - totalExpenses;
+
+    document.getElementById("totalIncome").textContent =
+        formatCurrency(totalIncome);
+
+    document.getElementById("availableBalance").textContent =
+        formatCurrency(availableBalance);
+}
+// Update Income and Available Balance
+// UPDATE INCOME
+async function updateIncome(id, income) {
+
+    try {
+        const response = await fetch(`${INCOME_API_URL}/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(income)
+        });
+
+        const responseText = await response.text();
+
+        console.log("Update Status:", response.status);
+        console.log("Update Response:", responseText);
+
+        if (!response.ok) {
+            throw new Error(
+                `HTTP ${response.status}: ${responseText || "Update failed"}`
+            );
+        }
+
+        alert("Income updated successfully!");
+        return true;
+
+    } catch (error) {
+        console.error("Income update error:", error);
+        alert(error.message);
+        return false;
+    }
+}
+
+// DELETE INCOME
+async function deleteIncome(id) {
+
+    const confirmDelete = confirm(
+        "Are you sure you want to delete this income record?"
+    );
+
+    if (!confirmDelete) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(`${INCOME_API_URL}/${id}`, {
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error("Unable to delete income.");
+        }
+
+        alert("Income deleted successfully!");
+
+        const incomes = await loadIncomes();
+
+        displayIncomes(incomes);
+        updateIncomeSummary();
+
+    } catch (error) {
+
+        console.error("Income deletion error:", error);
+        alert(error.message);
+    }
 }
 
 // Create and update charts

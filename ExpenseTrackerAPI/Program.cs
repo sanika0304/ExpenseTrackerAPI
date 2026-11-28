@@ -12,11 +12,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme =
-        JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 
-    options.DefaultChallengeScheme =
-        JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -52,6 +50,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<ExpenseRepository>();
+builder.Services.AddScoped<IncomeRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<PasswordHelper>();
 builder.Services.AddScoped<JwtHelper>();
