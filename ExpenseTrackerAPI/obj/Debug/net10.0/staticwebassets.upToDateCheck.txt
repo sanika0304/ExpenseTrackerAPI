@@ -1,0 +1,12 @@
+wwwroot\index.html
+wwwroot\login.css
+wwwroot\login.html
+wwwroot\login.js
+wwwroot\script.js
+wwwroot\style.css
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\index.html
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\login.css
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\login.html
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\login.js
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\script.js
+D:\Project\ExpenseTrackerAPI\ExpenseTrackerAPI\wwwroot\style.css
